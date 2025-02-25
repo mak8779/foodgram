@@ -1,4 +1,5 @@
 import base64
+import django_filters
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -170,17 +171,26 @@ class UserViewSet(viewsets.ModelViewSet):
                     {"errors": "Нельзя подписаться на самого себя."},
                     status=HTTP_400_BAD_REQUEST,
                 )
-            if Subscription.objects.filter(user=request.user, author=author).exists():
+            if Subscription.objects.filter(
+                user=request.user,
+                author=author
+            ).exists():
                 return Response(
                     {"errors": "Вы уже подписаны на этого пользователя."},
                     status=HTTP_400_BAD_REQUEST,
                 )
             Subscription.objects.create(user=request.user, author=author)
-            serializer = SubscriptionSerializer(author, context={'request': request})
+            serializer = SubscriptionSerializer(
+                author,
+                context={'request': request}
+            )
             return Response(serializer.data, status=HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
-            subscription = Subscription.objects.filter(user=request.user, author=author)
+            subscription = Subscription.objects.filter(
+                user=request.user,
+                author=author
+            )
             if subscription.exists():
                 subscription.delete()
                 return Response(status=HTTP_204_NO_CONTENT)
@@ -197,13 +207,24 @@ class TagViewSet(viewsets.ModelViewSet):
     http_method_names = ['get',]
 
 
+class IngredientFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='icontains'
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = ['name']
+
+
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all().order_by('id')
     serializer_class = IngredientSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    http_method_names = ['get',]
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('^name',)
+    http_method_names = ['get']
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = IngredientFilter
 
 
 class CharInFilter(BaseInFilter, CharFilter):
@@ -249,6 +270,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = RecipeFilter
     ordering = ['-pub_date']
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
     @action(
         detail=True,
@@ -459,5 +483,5 @@ class LogoutView(APIView):
 
 def redirect_short_link(request, short_link):
     recipe = get_object_or_404(Recipe, short_link=short_link)
-    frontend_url = f'http://localhost:3000/recipes/{recipe.id}/'
+    frontend_url = f'https://foodgramic.sytes.net/recipes/{recipe.id}/'
     return redirect(frontend_url)

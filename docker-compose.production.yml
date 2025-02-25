@@ -4,8 +4,9 @@ volumes:
   pg_data:
   static:
   media:
-  certbot-conf:
-  certbot-www:
+  nginx_certs:
+  nginx_vhost:
+  nginx_html:
 
 services:
   db:
@@ -35,16 +36,31 @@ services:
   gateway:
     image: mak8779/foodgram_gateway
     env_file: .env
-    ports:
-      - 80:80
-      - 443:443
+    expose:
+      - "80"
     volumes:
       - static:/staticfiles/
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
+      - media:/app/media
 
-  certbot:
-    image: certbot/certbot
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - certbot-conf:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - nginx_certs:/etc/nginx/certs:ro
+      - nginx_vhost:/etc/nginx/vhost.d
+      - nginx_html:/usr/share/nginx/html
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: nginx_proxy_le
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx_certs:/etc/nginx/certs:rw
+      - nginx_vhost:/etc/nginx/vhost.d
+      - nginx_html:/usr/share/nginx/html
+    depends_on:
+      - nginx-proxy

@@ -282,18 +282,18 @@ class TokenSerializer(serializers.Serializer):
 class PasswordChangeSerializer(serializers.Serializer):
     """Сериализатор для изменения пароля."""
 
-    old_password = serializers.CharField(required=True, min_length=8)
+    current_password = serializers.CharField(required=True, min_length=8)
     new_password = serializers.CharField(required=True, min_length=8)
 
     def validate(self, attrs):
         user = self.context['request'].user
 
-        if not user.check_password(attrs['old_password']):
+        if not user.check_password(attrs['current_password']):
             raise serializers.ValidationError(
-                {"old_password": "Старый пароль неверен."}
+                {"current_password": "Старый пароль неверен."}
             )
 
-        if attrs['old_password'] == attrs['new_password']:
+        if attrs['current_password'] == attrs['new_password']:
             raise serializers.ValidationError(
                 {"new_password": "Новый пароль не должен совпадать со старым."}
             )
