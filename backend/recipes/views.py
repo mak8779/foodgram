@@ -204,7 +204,7 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all().order_by('id')
     serializer_class = TagSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
-    http_method_names = ['get',]
+    http_method_names = ['get']
 
 
 class IngredientFilter(django_filters.FilterSet):
