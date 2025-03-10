@@ -111,7 +111,6 @@ DEBUG=*false для продакшена и true для тестов*
 SECRET_KEY=*Секретный ключ Django*
 ALLOWED_HOSTS=127.0.0.1,localhost, *доп. хосты*
 ```
-
 ---
 
 ## Документация API
