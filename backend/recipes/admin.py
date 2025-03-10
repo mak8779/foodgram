@@ -1,19 +1,8 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
+from django.utils.html import format_html
 
 from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag)
-from users.models import Subscription
-
-User = get_user_model()
-
-
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'first_name', 'last_name')
-    search_fields = ('username', 'email')
-
-
-admin.site.register(User, UserAdmin)
 
 
 @admin.register(Tag)
@@ -31,32 +20,49 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
+    min_num = 1
     verbose_name = 'Ингредиент'
     verbose_name_plural = 'Ингредиенты'
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'favorites_count')
+    list_display = (
+        'name',
+        'author',
+        'favorites_count',
+        'display_ingredients',
+        'display_image'
+    )
     search_fields = ('name', 'author__username')
     inlines = [RecipeIngredientInline]
     filter_horizontal = ('tags',)
 
     @admin.display(description='Добавлений в избранное')
     def favorites_count(self, obj):
-        return FavoriteRecipe.objects.filter(recipe=obj).count()
+        return obj.favorited_by.count()
+
+    @admin.display(description='Ингредиенты')
+    def display_ingredients(self, obj):
+        return ', '.join(
+            [ri.ingredient.name for ri in obj.recipeingredient_set.all()]
+        ) if obj.recipeingredient_set.exists() else "Нет ингредиентов"
+
+    @admin.display(description='Изображение')
+    def display_image(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" width="50" height="50" '
+                'style="object-fit:cover;" />',
+                obj.image.url
+            )
+        return "Нет изображения"
 
 
 @admin.register(RecipeIngredient)
 class RecipeIngredientAdmin(admin.ModelAdmin):
     list_display = ('recipe', 'ingredient', 'amount')
     search_fields = ('recipe__name', 'ingredient__name')
-
-
-@admin.register(Subscription)
-class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'author')
-    search_fields = ('user__username', 'author__username')
 
 
 @admin.register(FavoriteRecipe)
