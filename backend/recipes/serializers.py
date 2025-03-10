@@ -163,7 +163,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.tags.set(tags_data)
 
         if ingredients_data is not None:
-            instance.recipeingredient_set.all().delete()
+            instance.recipe_ingredients.all().delete()
             RecipeIngredient.objects.bulk_create([
                 RecipeIngredient(
                     recipe=instance,
@@ -182,7 +182,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
 
         representation['ingredients'] = RecipeIngredientReadSerializer(
-            instance.recipeingredient_set.all(), many=True
+            instance.recipe_ingredients.all(), many=True
         ).data
 
         ordered_representation = OrderedDict()
