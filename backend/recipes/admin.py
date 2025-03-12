@@ -45,8 +45,8 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Ингредиенты')
     def display_ingredients(self, obj):
         return ', '.join(
-            [ri.ingredient.name for ri in obj.recipeingredient_set.all()]
-        ) if obj.recipeingredient_set.exists() else "Нет ингредиентов"
+            [ri.ingredient.name for ri in obj.recipe_ingredients.all()]
+        ) if obj.recipe_ingredients.exists() else "Нет ингредиентов"
 
     @admin.display(description='Изображение')
     def display_image(self, obj):
